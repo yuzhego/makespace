@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { Profile } from '../lib/types';
+import { Profile, AvailableSpace } from '../lib/types';
+import { dummyAvailableSpaces } from '../lib/dummyData';
 
 interface HomeScreenProps {
   route: { params: { userId: string; userType: 'popup' | 'host' } };
@@ -9,19 +10,31 @@ interface HomeScreenProps {
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
   const { userId, userType } = route.params;
-  const [hosts] = useState<Profile[]>([]);
+  const [spaces] = useState<AvailableSpace[]>(dummyAvailableSpaces);
   const [loading] = useState(false);
 
-  const renderHost = ({ item }: { item: Profile }) => (
-    <TouchableOpacity style={styles.item} onPress={() => navigation.navigate('HostDetail', { host: item, popupId: userId })}>
-      <Text style={styles.title}>{item.business_name}</Text>
-      <Text style={styles.description}>{item.description}</Text>
+  const formatAvailability = (space: AvailableSpace): string => {
+    const days = space.availableTimes.map(slot => `${slot.day.slice(0, 3)}: ${slot.startTime}-${slot.endTime}`);
+    return days.slice(0, 2).join(', ') + (days.length > 2 ? '...' : '');
+  };
+
+  const renderSpace = ({ item }: { item: AvailableSpace }) => (
+    <TouchableOpacity style={styles.item} onPress={() => navigation.navigate('SpaceDetail', { space: item })}>
+      <View style={styles.spaceTitleRow}>
+        <Text style={styles.title}>{item.name}</Text>
+        <Text style={styles.cost}>${item.costPerHour}/hr</Text>
+      </View>
+      {item.description && <Text style={styles.description}>{item.description}</Text>}
+      <View style={styles.detailsRow}>
+        <Text style={styles.detail}>📍 Max: {item.maxOccupancy}</Text>
+        <Text style={styles.detail}>🕐 {formatAvailability(item)}</Text>
+      </View>
     </TouchableOpacity>
   );
 
   const renderEmptyPopup = () => (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>Currently no space hosts available</Text>
+      <Text style={styles.emptyText}>Currently no spaces available</Text>
     </View>
   );
 
@@ -40,15 +53,15 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
       );
     }
 
-    if (hosts.length === 0) {
+    if (spaces.length === 0) {
       return renderEmptyPopup();
     }
 
     return (
       <FlatList
-        data={hosts}
-        renderItem={renderHost}
-        keyExtractor={(item) => item.user_id}
+        data={spaces}
+        renderItem={renderSpace}
+        keyExtractor={(item) => item.id}
         scrollEnabled={true}
         nestedScrollEnabled={true}
       />
@@ -76,8 +89,21 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: '#007AFF',
   },
-  title: { fontSize: 18, fontWeight: '700', color: '#1a1a1a', marginBottom: 4 },
-  description: { fontSize: 14, color: '#666666' },
+  spaceTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  title: { fontSize: 18, fontWeight: '700', color: '#1a1a1a' },
+  cost: { fontSize: 16, fontWeight: '600', color: '#007AFF' },
+  description: { fontSize: 14, color: '#666666', marginBottom: 8 },
+  detailsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  detail: { fontSize: 13, color: '#555555', fontWeight: '500' },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',

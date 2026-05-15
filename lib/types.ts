@@ -44,3 +44,20 @@ export interface Request {
   response_notes?: string;
   created_at: string;
 }
+
+export interface AvailableSpace {
+  id: string;
+  name: string;
+  description?: string;
+  availableTimes: DaySchedule[];
+  maxOccupancy: number;
+  costPerHour: number;
+  address?: string;
+  imageUrl?: string;
+}
+
+export interface DaySchedule {
+  day: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+  startTime: string; // HH:MM format
+  endTime: string; // HH:MM format
+}
